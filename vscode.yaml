@@ -1,0 +1,12 @@
+#cloud-config
+write_files:
+  - content: |
+      curl -fsSL https://code-server.dev/install.sh > /root/install.sh
+    path: /root/install.sh
+    owner: root:root
+    permissions: '755'
+
+runcmd:
+  - bash /root/install.sh
+  - code-server --bind-addr 0.0.0.0:8080
+

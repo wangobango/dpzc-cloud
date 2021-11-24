@@ -1,0 +1,16 @@
+services:
+  db:
+    image: mysql
+    ports:
+      - "10.10.10.3:3306:3306"
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=gitea
+      - MYSQL_USER=gitea
+      - MYSQL_PASSWORD=gitea
+      - MYSQL_DATABASE=gitea
+    volumes:
+      - ./mysql:/mnt/HC_Volume_15010771/mysql
+      
+volumes:
+  mysql: {}

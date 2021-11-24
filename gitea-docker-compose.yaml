@@ -1,0 +1,19 @@
+services:
+  server:
+    image: gitea/gitea:1.15.6-rootless
+    environment:
+      - GITEA__database__DB_TYPE=mysql
+      - GITEA__database__HOST=10.10.10.3:3306    
+      - GITEA__database__NAME=gitea
+      - GITEA__database__USER=gitea
+      - GITEA__database__PASSWD=gitea
+    restart: always
+    volumes:
+      - ./data:/root/gitea
+      - ./config:/root/gitea/config
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /mnt/HC_Volume-15010710:/data
+    ports:
+      - "3000:3000"
+      - "222:22" 
