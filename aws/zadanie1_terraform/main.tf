@@ -144,11 +144,12 @@ resource "aws_lb_target_group" "test" {
   vpc_id   = aws_vpc.example.id
 }
 
-# resource "aws_lb_target_group_attachment" "test" {
-#   target_group_arn = aws_lb_target_group.test.arn
-#   target_id        = aws_instance.server[count.index].id
-#   port             = 8080
-# }
+resource "aws_lb_target_group_attachment" "test" {
+  count            = 2 
+  target_group_arn = aws_lb_target_group.test.arn
+  target_id        = aws_instance.server[count.index].id
+  port             = 8080
+}
 
 resource "aws_lb_listener" "front_end" {
   load_balancer_arn = aws_lb.test.arn
@@ -162,5 +163,5 @@ resource "aws_lb_listener" "front_end" {
 }
 
 output "ip" {
-  value = "http://${aws_lb.test.dns_name}:8080"
+  value = "http://${aws_lb.test.dns_name}:8080/factors/10"
 }

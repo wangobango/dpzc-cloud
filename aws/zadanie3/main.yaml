@@ -1,6 +1,0 @@
-#cloud-config
-packages:
-  - git
-runcmd:
-  - git clone https://github.com/wangobango/dpzc-cloud
-  - ./dpzc-cloud/aws/zadanie1/webservice
