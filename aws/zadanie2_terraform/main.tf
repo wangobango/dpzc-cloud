@@ -7,12 +7,10 @@ terraform {
   }
 }
 
-# Configure the AWS Provider
 provider "aws" {
   region = "us-east-1"
 }
 
-# Create a VPC
 resource "aws_vpc" "example" {
   cidr_block = "10.0.0.0/16"
 }
@@ -127,9 +125,7 @@ resource "aws_lb" "test" {
   name               = "test-lb-tf"
   internal           = false
   load_balancer_type = "network"
-  # security_groups    = [aws_security_group.example.id]
   enable_deletion_protection = false
-  # subnets = [aws_subnet.public_subnet.id]
 
   subnet_mapping {
     subnet_id     = aws_subnet.public_subnet.id
@@ -166,3 +162,84 @@ output "ip" {
   value = "http://${aws_lb.test.dns_name}:8080/factors/10"
 }
 
+resource "aws_launch_template" "test" {
+  name = "webservice_launch_template"
+  image_id = "ami-0ed9277fb7eb570c9"
+  instance_type = "t2.micro"
+  monitoring {
+    enabled = true
+  }
+
+  placement {
+    availability_zone = "us-east-1c"
+  }
+  vpc_security_group_ids = [aws_security_group.example.id]
+  user_data = data.template_file.user_data_server.rendered
+}
+
+resource "aws_autoscaling_group" "test" {
+  name                      = "test-group"
+  max_size                  = 5
+  min_size                  = 2
+  health_check_type         = "ELB"
+  health_check_grace_period = 100
+  desired_capacity          = 4
+  force_delete              = true
+  vpc_zone_identifier       = [aws_subnet.public_subnet.id]
+
+  launch_template {
+    id      = aws_launch_template.test.id
+    version = "$Latest"
+  }
+
+  timeouts {
+    delete = "15m"
+  }
+
+}
+
+
+resource "aws_elb" "test" {
+  name               = "elastic-load-balancer-test"
+  subnets            = [aws_subnet.public_subnet.id]
+  security_groups    = [aws_security_group.example.id]
+  internal           = false
+
+  listener {
+    instance_port      = 8080
+    instance_protocol  = "http"
+    lb_port            = 8080
+    lb_protocol        = "http"
+  }
+
+  health_check {
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    timeout             = 3
+    target              = "http:8080/factors/10"
+    interval            = 30
+  }
+}
+
+
+resource "aws_autoscaling_attachment" "asg_attachment_bar" {
+  autoscaling_group_name = aws_autoscaling_group.test.id
+  elb                    = aws_elb.test.id
+}
+
+resource "aws_autoscaling_policy" "bat" {
+  name                   = "policy-test"
+  autoscaling_group_name = aws_autoscaling_group.test.name
+  policy_type = "TargetTrackingScaling"
+  target_tracking_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ASGAverageCPUUtilization"
+    }
+    target_value = 5.0
+  }
+
+}
+
+output "ip-2" {
+  value = "http://${aws_elb.test.dns_name}:8080/factors/10"
+}
